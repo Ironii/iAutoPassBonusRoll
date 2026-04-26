@@ -1,0 +1,10 @@
+## Interface: 120005
+## Title: iAutoPassBonusRoll
+## Author: Ironi
+## Version: 1.0
+## DefaultState: enabled
+## LoadSavedVariablesFirst: 1
+## SavedVariablesPerCharacter: iAutoPassBonusRollDB
+## IconTexture: Interface\Icons\inv_misc_coin_17
+
+core.lua
