@@ -1,7 +1,7 @@
 ## Interface: 120005
 ## Title: iAutoPassBonusRoll
 ## Author: Ironi
-## Version: 1.0
+## Version: 1.1
 ## DefaultState: enabled
 ## LoadSavedVariablesFirst: 1
 ## SavedVariablesPerCharacter: iAutoPassBonusRollDB
