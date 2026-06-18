@@ -68,6 +68,7 @@ do -- Options
 		14, -- Raid Normal
 		15, -- Raid Heroic
 		16, -- Raid Mythic
+		233, -- Raid Mythic Flex
 		}) do
 		local difName, difType = GetDifficultyInfo(id)
 		Settings.CreateCheckbox(config, Settings.RegisterAddOnSetting(config, tostring(id), tostring(id), db.difs, "boolean", string.format("%s (%s)", difName, difType)))
@@ -87,6 +88,9 @@ do -- Options
 		-- March
 		{ejId = 2739, eId = 3182, jiId = 1308}, -- Belo'ren
 		{ejId = 2740, eId = 3183, jiId = 1308}, -- Midnight falls
+
+		-- Sporefall
+		{ejId = 2711, eId = 3159, jiId = 1305}, -- Rotmire
 
 	}) do
 		local encounterName = EJ_GetEncounterInfo(d.ejId)
@@ -125,6 +129,7 @@ do
 		[3306] = 268464, -- Chimearus
 		[3182] = 268458, -- Belo'ren
 		[3183] = 262658, -- Midnight falls
+		[3159] = 275228, -- Rotmire
 	}
 	local instancesToItems = {
 		[2526] = 268465, -- Algeth'ar Academy
@@ -143,6 +148,7 @@ do
 		[14] = 3, -- Raid Normal
 		[15] = 5, -- Raid Heroic
 		[16] = 6, -- Raid Mythic
+		[233] = 6, -- Raid Mythic Flex
 	}
 	local function encounterHook(self, button, data)
 		if data.bossID then
