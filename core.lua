@@ -47,7 +47,7 @@ function addon:SPELL_CONFIRMATION_PROMPT(spellID, effectValue, message, duration
 		ns.PassBonusRoll(spellID, "EncounterId")
 		return
 	end
-	DevTools_Dump({spellID, effectValue, message, duration, currencyTypesID, currencyCost, currentDifficulty, displayItemID, itemContext, treasureContextLevel})
+	--DevTools_Dump({spellID, effectValue, message, duration, currencyTypesID, currencyCost, currentDifficulty, displayItemID, itemContext, treasureContextLevel})
 	--DevTools_Dump({GetJournalInfoForSpellConfirmation(spellID)})
 end
 
@@ -76,22 +76,16 @@ do -- Options
 	configLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer(GUILD_NEWS_FILTER3)) -- Raid encounters
 	--Settings.CreateSectionHeader(config, GUILD_NEWS_FILTER3) -- Raid encounters
 	for _, d in ipairs({
-		-- Voidspire
-		{ejId = 2733, eId = 3176, jiId = 1307}, -- Imperator Averzian
-		{ejId = 2734, eId = 3177, jiId = 1307}, -- Vorasius
-		{ejId = 2736, eId = 3179, jiId = 1307}, -- Salhadaar
-		{ejId = 2735, eId = 3178, jiId = 1307}, -- Vaelgor & Ezzorak
-		{ejId = 2737, eId = 3180, jiId = 1307}, -- Lightblinded Vanguard
-		{ejId = 2738, eId = 3181, jiId = 1307}, -- Crown of the Cosmos
-		-- Dreamrift
-		{ejId = 2795, eId = 3306, jiId = 1314}, -- Chimearus
-		-- March
-		{ejId = 2739, eId = 3182, jiId = 1308}, -- Belo'ren
-		{ejId = 2740, eId = 3183, jiId = 1308}, -- Midnight falls
+		{ejId = 2888, eId = 3470, jiId = 1320}, -- Soulcoiler Nek'zali
+		{ejId = 2874, eId = 3445, jiId = 1320}, -- Entombed Sentinels
+		{ejId = 2894, eId = 3497, jiId = 1320}, -- Tortollan Explorers
+		{ejId = 2882, eId = 3455, jiId = 1320}, -- Vashnik
+		{ejId = 2871, eId = 3420, jiId = 1320}, -- Sszorak
+		{ejId = 2887, eId = 3421, jiId = 1320}, -- The Twin Fangs
+		{ejId = 2883, eId = 3429, jiId = 1320}, -- The Coiled Altar		
+		{ejId = 2895, eId = 3492, jiId = 1320}, -- Ula'tek
 
-		-- Sporefall
-		{ejId = 2711, eId = 3159, jiId = 1305}, -- Rotmire
-
+		{ejId = 2849, eId = 3379, jiId = 1317}, -- Nymrissa Wavecaller
 	}) do
 		local encounterName = EJ_GetEncounterInfo(d.ejId)
 		if not encounterName then
@@ -103,14 +97,14 @@ do -- Options
 	configLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer(DUNGEONS)) -- M+ dungeons
 	--Settings.CreateSectionHeader(config, DUNGEONS) -- M+ dungeons
 	for _, d in ipairs({
-		{ejId = 1201, instanceId = 2526}, -- Algeth'ar Academy
-		{ejId = 1300, instanceId = 2811}, -- Magisters' Terrace
-		{ejId = 1315, instanceId = 2874}, -- Maisara Caverns
-		{ejId = 1316, instanceId = 2915}, -- Nexus-Point Xenas
-		{ejId = 278, instanceId = 658}, -- Pit of Saron
-		{ejId = 945, instanceId = 1753}, -- Seat of the Triumvirate
-		{ejId = 476, instanceId = 1209}, -- Skyreach
-		{ejId = 1299, instanceId = 2805}, -- Windrunner Spire
+		{ejId = 1322, instanceId = 2993}, -- Altar of Fangs
+		{ejId = 1311, instanceId = 2825}, -- Den of Nalorakk
+		{ejId = 1304, instanceId = 2813}, -- Murder Row
+		{ejId = 1309, instanceId = 2859}, -- The Blinding Vale
+		{ejId = 1313, instanceId = 2923}, -- Voidscar Arena
+		{ejId = 1041, instanceId = 1762}, -- Kings' Rest
+		{ejId = 1202, instanceId = 2521}, -- Ruby Life Pools
+		{ejId = 1030, instanceId = 1877}, -- Temple of Sethraliss
 	}) do
 		local instanceName = EJ_GetInstanceInfo(d.ejId) or string.format("%s (%s)", UNKNOWN, d.instanceId)
 		Settings.CreateCheckbox(config, Settings.RegisterAddOnSetting(config, tostring(d.instanceId), tostring(d.instanceId), db.instances, "boolean", instanceName))
@@ -120,26 +114,26 @@ end
 
 do
 	local encountersToItems = {
-		[3176] = 268459, -- Imperator Averzian
-		[3177] = 268460, -- Vorasius
-		[3179] = 268461, -- Salhadaar
-		[3178] = 268462, -- Vaelgor & Ezzorak
-		[3180] = 268463, -- Lightblinded Vanguard
-		[3181] = 267488, -- Crown of the Cosmos
-		[3306] = 268464, -- Chimearus
-		[3182] = 268458, -- Belo'ren
-		[3183] = 262658, -- Midnight falls
-		[3159] = 275228, -- Rotmire
+		[3470] = 278285, -- Soulcoiler Nek'zali
+		[3445] = 278283, -- Entombed Sentinels
+		[3497] = 278286, -- Tortollan Explorers
+		[3455] = 278287, -- Vashnik
+		[3420] = 278288, -- Sszorak
+		[3421] = 278289, -- The Twin Fangs
+		[3429] = 278290, -- The Coiled Altar		
+		[3492] = 278284, -- Ula'tek
+
+		[3379] = 274708, -- Nymrissa Wavecaller
 	}
 	local instancesToItems = {
-		[2526] = 268465, -- Algeth'ar Academy
-		[2811] = 268466, -- Magisters' Terrace
-		[2874] = 268473, -- Maisara Caverns
-		[2915] = 268467, -- Nexus-Point Xenas
-		[658] = 268468, -- Pit of Saron
-		[1753] = 268469, -- Seat of the Triumvirate
-		[1209] = 268470, -- Skyreach
-		[2805] = 268471, -- Windrunner Spire
+		[2993] = 279618, -- Altar of Fangs
+		[2825] = 279620, -- Den of Nalorakk
+		[2813] = 279623, -- Murder Row
+		[2859] = 279619, -- The Blinding Vale
+		[2923] = 279625, -- Voidscar Arena
+		[1762] = 279621, -- Kings' Rest
+		[2521] = 279622, -- Ruby Life Pools
+		[1877] = 279624, -- Temple of Sethraliss
 	}
 	local difIdToContextDif = {
 		[23] = 16, -- Mythic 0
