@@ -92,7 +92,7 @@ do -- Options
 			EJ_SelectInstance(d.jiId)
 			encounterName = EJ_GetEncounterInfo(d.ejId) or string.format("%s (%s)", UNKNOWN, d.eId)
 		end
-		Settings.CreateCheckbox(config, Settings.RegisterAddOnSetting(config, tostring(d.eId), tostring(d.eId), db.encounters, "boolean", encounterName))
+		Settings.CreateCheckbox(config, Settings.RegisterAddOnSetting(config, tostring(d.ejId), tostring(d.ejId), db.encounters, "boolean", encounterName))
 	end
 	configLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer(DUNGEONS)) -- M+ dungeons
 	--Settings.CreateSectionHeader(config, DUNGEONS) -- M+ dungeons
