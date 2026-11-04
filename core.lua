@@ -7,7 +7,18 @@ if not iAutoPassBonusRollDB then
 	}
 end
 local db = iAutoPassBonusRollDB
-
+db.notes = db.notes or { encounters = {}, instances = {} } -- encounters: journal encounter id, instances: map instance id
+do
+	local currentSeason = 1202 -- expansion + season
+	if not db.currentSeason then
+		db.currentSeason = currentSeason
+	elseif db.currentSeason < currentSeason then -- clean up
+		wipe(db.notes.encounters)
+		wipe(db.notes.instances)
+		-- TBA clean up db, popup some message saying it, maybe ask if difId options should be reset or not
+		db.currentSeason = currentSeason
+	end
+end
 local addon = CreateFrame('Frame')
 addon:SetScript("OnEvent", function(self, event, ...)
 	self[event](self, ...)
@@ -24,6 +35,60 @@ end
 
 function ns.ShouldAutoPassInstance(instanceId)
 	return instanceId and db.instances[tostring(instanceId)]
+end
+
+do -- Notes
+	local editor
+	function ns.ShowNoteEditor(anchor, kind, key, title)
+		if not editor then
+			editor = CreateFrame("EditBox", nil, EncounterJournal, "InputBoxTemplate")
+			editor:SetSize(200, 20)
+			editor:SetFrameStrata("DIALOG")
+			editor:SetAutoFocus(true)
+			editor:SetMaxLetters(80)
+			editor.title = editor:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+			editor.title:SetPoint("BOTTOMLEFT", editor, "TOPLEFT", -5, 2)
+			editor:SetScript("OnEnterPressed", function(self)
+				local text = strtrim(self:GetText())
+				db.notes[self.kind][self.key] = text ~= "" and text or nil
+				self:Hide()
+			end)
+			editor:SetScript("OnEscapePressed", function(self) self:Hide() end)
+			editor:SetScript("OnEditFocusLost", function(self) self:Hide() end)
+			EncounterJournal:HookScript("OnHide", function() editor:Hide() end)
+		end
+		-- kind/key are stored now, boss buttons get recycled by the scrollbox
+		editor.kind, editor.key = kind, key
+		editor.title:SetText(title)
+		editor:ClearAllPoints()
+		editor:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT", 0, -2)
+		editor:SetText(db.notes[kind][key] or "")
+		editor:Show()
+		editor:SetFocus()
+		editor:HighlightText()
+	end
+	function ns.OpenNoteMenu(owner, kind, key, title)
+		MenuUtil.CreateContextMenu(owner, function(_, root)
+			root:CreateTitle(title)
+			root:CreateButton("Edit note", function()
+				ns.ShowNoteEditor(owner, kind, key, title)
+			end)
+			local clear = root:CreateButton("Clear note", function()
+				db.notes[kind][key] = nil
+				if editor and editor:IsShown() and editor.kind == kind and editor.key == key then
+					editor:Hide()
+				end
+			end)
+			clear:SetEnabled(db.notes[kind][key] ~= nil)
+		end)
+	end
+	function ns.AddNoteTooltipLines(kind, key)
+		local note = key and db.notes[kind][key]
+		if note then
+			GameTooltip:AddLine("Note: " .. note, 1, 1, 1, true)
+		end
+		GameTooltip:AddLine("Right-click for note options", 0.5, 0.5, 0.5)
+	end
 end
 
 function ns.PassBonusRoll(spellId, reason)
@@ -86,6 +151,8 @@ do -- Options
 		{ejId = 2895, eId = 3492, jiId = 1320}, -- Ula'tek
 
 		{ejId = 2849, eId = 3379, jiId = 1317}, -- Nymrissa Wavecaller
+
+		{ejId = 2896, eId = 3513,  jiId = 1324}, -- Kith'ix
 	}) do
 		local encounterName = EJ_GetEncounterInfo(d.ejId)
 		if not encounterName then
@@ -124,6 +191,7 @@ do
 		[3492] = 278284, -- Ula'tek
 
 		[3379] = 274708, -- Nymrissa Wavecaller
+		[3513] = 286019, -- Kith'ix
 	}
 	local instancesToItems = {
 		[2993] = 279618, -- Altar of Fangs
@@ -135,14 +203,28 @@ do
 		[2521] = 279622, -- Ruby Life Pools
 		[1877] = 279624, -- Temple of Sethraliss
 	}
-	local difIdToContextDif = {
+	local difIdToContextDif = { -- https://wago.tools/db2/Difficulty - ItemContext
 		[23] = 16, -- Mythic 0
 		[8] = 16, -- Mythic+
-		[17] = 4, -- LFR
-		[14] = 3, -- Raid Normal
-		[15] = 5, -- Raid Heroic
-		[16] = 6, -- Raid Mythic
-		[233] = 6, -- Raid Mythic Flex
+		[17] = 94, -- LFR
+		[14] = 93, -- Raid Normal
+		[15] = 95, -- Raid Heroic
+		[16] = 96, -- Raid Mythic
+		[233] = 96, -- Raid Mythic Flex
+	}
+	local encountersToTreasureLevel = { -- https://wago.tools/db2/DungeonEncounter - ItemSequenceLevel
+		[3470] = 1, -- Soulcoiler Nek'zali
+		[3445] = 2, -- Entombed Sentinels
+		[3497] = 2, -- Tortollan Explorers
+		[3455] = 3, -- Vashnik
+		[3420] = 3, -- Sszorak
+		[3421] = 3, -- The Twin Fangs
+		[3429] = 4, -- The Coiled Altar		
+		[3492] = 4, -- Ula'tek
+
+		[3379] = 1, -- Nymrissa Wavecaller
+		
+		[3513] = 3, -- Kith'ix
 	}
 	local function encounterHook(self, button, data)
 		if data.bossID then
@@ -159,17 +241,27 @@ do
 						if not (button.bonusRollFrame.encounterId and encountersToItems[button.bonusRollFrame.encounterId]) then return end
 						local difId = EJ_GetDifficulty()
 						local contextDif = difIdToContextDif[difId]
-						if not contextDif then return end
 						--GameTooltip:SetItemByID(268469, nil, 16, 10)
 						GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
-						GameTooltip:SetItemByID(encountersToItems[button.bonusRollFrame.encounterId], nil, contextDif, nil)
+						if contextDif then
+							GameTooltip:SetItemByID(encountersToItems[button.bonusRollFrame.encounterId], nil, contextDif, 0)
+						end
+						ns.AddNoteTooltipLines("encounters", button.bonusRollFrame.journalEncounterId)
 						GameTooltip:Show()
 					end)
 					button.bonusRollFrame:SetScript("OnLeave", function(self)
 						GameTooltip:Hide()
 					end)
+					button.bonusRollFrame:SetScript("OnMouseUp", function(self, mouseButton)
+						if mouseButton ~= "RightButton" then return end
+						local journalEncounterId = button.bonusRollFrame.journalEncounterId
+						if not journalEncounterId then return end
+						GameTooltip:Hide()
+						ns.OpenNoteMenu(self, "encounters", journalEncounterId, EJ_GetEncounterInfo(journalEncounterId) or UNKNOWN)
+					end)
 				end
 				button.bonusRollFrame.encounterId = encounterID
+				button.bonusRollFrame.journalEncounterId = data.bossID
 				button.bonusRollFrame:Show()
 				return
 			end
@@ -177,6 +269,7 @@ do
 		if not button.bonusRollFrame then return end
 			button.bonusRollFrame:Hide()
 			button.bonusRollFrame.encounterId = nil
+			button.bonusRollFrame.journalEncounterId = nil
 	end
 	local function instanceHook()
 		local instanceId = select(10, EJ_GetInstanceInfo())
@@ -194,10 +287,18 @@ do
 					if not (instanceId and instancesToItems[instanceId]) then return end
 					GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
 					GameTooltip:SetItemByID(instancesToItems[instanceId], nil, 16, 10)
+					ns.AddNoteTooltipLines("instances", instanceId)
 					GameTooltip:Show()
 				end)
 				f:SetScript("OnLeave", function(self)
 					GameTooltip:Hide()
+				end)
+				f:SetScript("OnMouseUp", function(self, mouseButton)
+					if mouseButton ~= "RightButton" then return end
+					local instanceName, _, _, _, _, _, _, _, _, instanceId = EJ_GetInstanceInfo()
+					if not (instanceId and instancesToItems[instanceId]) then return end
+					GameTooltip:Hide()
+					ns.OpenNoteMenu(self, "instances", instanceId, instanceName or UNKNOWN)
 				end)
 			end
 			EncounterJournal.encounter.bonusRollFrame:Show()
@@ -221,3 +322,47 @@ do
 		end
 	end
 end
+
+do -- Bonus roll popup note
+	local function getNote()
+		-- encounter notes are raids, instance notes are 5mans, so only one can match
+		local encounterID = BonusRollFrame.encounterID
+		if encounterID and db.notes.encounters[encounterID] then
+			return db.notes.encounters[encounterID]
+		end
+		local instanceID = select(8, GetInstanceInfo())
+		return instanceID and db.notes.instances[instanceID]
+	end
+	local textFrame
+	hooksecurefunc("BonusRollFrame_StartBonusRoll", function(spellID)
+		local frame = BonusRollFrame
+		if not (frame.state == "prompt" and frame.spellID == spellID) then return end
+		if not textFrame then
+			-- parented to PromptFrame so it hides with the popup and when it switches to rolling state
+			textFrame = CreateFrame("Frame", nil, frame.PromptFrame)
+			textFrame:SetAllPoints(frame.PromptFrame)
+			textFrame.text = textFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+			textFrame.text:SetTextColor(1, 1, 1)
+			local font, size = textFrame.text:GetFont()
+			textFrame.text:SetFont(font, size, "OUTLINE")
+			textFrame.text:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 2, 2)
+			textFrame.text:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
+			textFrame.text:SetJustifyH("LEFT")
+			textFrame.text:SetWordWrap(false)
+		end
+		-- own frame above the timer statusbar so the text isn't drawn under it
+		textFrame:SetFrameLevel(math.max(frame:GetFrameLevel(), frame.PromptFrame.Timer:GetFrameLevel()) + 5)
+		local note = getNote()
+		if note then
+			textFrame.text:SetText(note)
+			textFrame:Show()
+		else
+			textFrame:Hide()
+		end
+	end)
+end
+
+--[[
+/script BonusRollFrame_StartBonusRoll(1, "", 60, 3418, 2, 16)
+/script BonusRollFrame_CloseBonusRoll()
+--]]
